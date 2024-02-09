@@ -19,19 +19,35 @@ export async function voteOnPoll(app: FastifyInstance) {
 
     let { sessionId } = request.cookies;
 
+    // Check if pollId exists
+    const poll = await prisma.poll.findUnique({
+      where: { id: pollId },
+      include: { options: true }
+    });
+
+    if (!poll) {
+      return reply.status(400).send({ message: 'Poll not found.' });
+    }
+
+    // Check if pollOptionId exists on poll
+    const pollOption = poll.options.find(option => option.id === pollOptionId);
+    if (!pollOption) {
+      return reply.status(400).send({ message: 'Poll option not found.' });
+    }
+
     if (sessionId) {
       const userPreviousVoteOnPoll = await prisma.vote.findUnique({
         where: {
           sessionId_pollId: {
             sessionId,
-            pollId,
+            pollId: poll.id,
           }
         }
       })
 
-      if (userPreviousVoteOnPoll && userPreviousVoteOnPoll.pollOptionId !== pollOptionId) {
+      if (userPreviousVoteOnPoll && userPreviousVoteOnPoll.pollOptionId !== pollOption.id) {
         await prisma.vote.delete({ where: { id: userPreviousVoteOnPoll.id } });
-        await redis.zincrby(pollId, -1, userPreviousVoteOnPoll.pollOptionId);
+        await redis.zincrby(poll.id, -1, userPreviousVoteOnPoll.pollOptionId);
       } else if (userPreviousVoteOnPoll) {
         return reply.status(400).send({ message: "You've already made this exact vote." })
       }
@@ -51,12 +67,12 @@ export async function voteOnPoll(app: FastifyInstance) {
     await prisma.vote.create({
       data: {
         sessionId,
-        pollId,
-        pollOptionId,
+        pollId: poll.id,
+        pollOptionId: pollOption.id,
       }
     });
 
-    await redis.zincrby(pollId, 1, pollOptionId);
+    await redis.zincrby(poll.id, 1, pollOption.id);
   
     return reply.status(201).send();
   });
