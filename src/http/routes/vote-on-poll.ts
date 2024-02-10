@@ -4,7 +4,6 @@ import { FastifyInstance } from "fastify";
 import { randomUUID } from "crypto";
 import { redis } from "@/lib/redis";
 import { voting } from "@/utils/voting-pub-sub";
-// TODO: Add absolute import paths
 
 export async function voteOnPoll(app: FastifyInstance) {
   app.post('/polls/:pollId/votes', async (request, reply) => {
