@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { prisma } from "../../lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { FastifyInstance } from "fastify";
 import { randomUUID } from "crypto";
-import { redis } from "../../lib/redis";
-import { voting } from "../../utils/voting-pub-sub";
+import { redis } from "@/lib/redis";
+import { voting } from "@/utils/voting-pub-sub";
 // TODO: Add absolute import paths
 
 export async function voteOnPoll(app: FastifyInstance) {
